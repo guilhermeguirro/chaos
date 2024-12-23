@@ -52,11 +52,15 @@ resource "aws_db_subnet_group" "aurora" {
 
   lifecycle {
     ignore_changes = [
-        subnet_ids
-        subnet_group    ]  # Ignore changes to subnet_ids to prevent conflicts
+      subnet_ids,  # Note the comma here
+      subnet_group # Last item doesn't need a comma
+    ]
+  }
+
+  tags = {
+    Environment = var.environment
   }
 }
-
 # Aurora cluster
 resource "aws_rds_cluster" "aurora" {
   cluster_identifier     = "aurora-cluster-${var.environment}"
