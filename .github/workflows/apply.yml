@@ -1,0 +1,67 @@
+name: "Terraform Apply"
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Select environment to deploy'
+        required: true
+        type: choice
+        options:
+          - dev
+          - stage
+          - prod
+        default: 'dev'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  terraform:
+    name: "Terraform Apply"
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'dev' }}
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ vars.ROLE_ARN }}
+        aws-region: us-east-1
+        audience: sts.amazonaws.com
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: "1.5.0"
+        terraform_wrapper: false
+
+    - name: Terraform Init
+      id: init
+      run: |
+        cd environments/${{ github.event.inputs.environment || 'dev' }}
+        terraform init -backend-config="kms_key_id=${{ vars.KMS_KEY_ID }}"
+        
+    - name: Terraform Validate
+      id: validate
+      run: |
+        cd environments/${{ github.event.inputs.environment || 'dev' }}
+        terraform validate -no-color
+
+    - name: Terraform Plan
+      id: plan
+      run: |
+        cd environments/${{ github.event.inputs.environment || 'dev' }}
+        terraform plan -no-color -out=tfplan
+
+    - name: Terraform Apply
+      if: |
+        (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+        github.event_name == 'workflow_dispatch'
+      run: |
+        cd environments/${{ github.event.inputs.environment || 'dev' }}
+        terraform apply -auto-approve tfplan
