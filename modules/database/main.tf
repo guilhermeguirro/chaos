@@ -57,10 +57,7 @@ resource "aws_db_subnet_group" "aurora" {
     ]
   }
 
-  tags = {
-    Environment = var.environment
-  }
-}
+
 # Aurora cluster
 resource "aws_rds_cluster" "aurora" {
   cluster_identifier     = "aurora-cluster-${var.environment}"
