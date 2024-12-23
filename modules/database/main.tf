@@ -51,12 +51,9 @@ resource "aws_db_subnet_group" "aurora" {
   }
 
   lifecycle {
-    ignore_changes = [
-      subnet_ids,  # Note the comma here
-      subnet_group # Last item doesn't need a comma
-    ]
+    ignore_changes = [subnet_ids]
   }
-
+}
 
 # Aurora cluster
 resource "aws_rds_cluster" "aurora" {
